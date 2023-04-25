@@ -7,8 +7,8 @@ A docker service used to send command to a server through ssh. Use ssh pool to a
 - avoid using lots of ssh connections. 5 connections in a pool.
 - simple service. if TCP connection is dropped not nicely, the worker maybe drained and you need to restart the service.
 
-## quick start
-- install docker first
+## Quick start
+- install docker first, and write a config file `external/config.yaml` (see **How to install**)
 - then run it with docker
 ```bash
 # on windows WSL2, or Linux, or mac
