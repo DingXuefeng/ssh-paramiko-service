@@ -32,8 +32,14 @@ server:
 ```
 
 ## How to launch the service?
+### native way
 ```bash
 python service.py
+```
+### docker way
+```bash
+docker build -t myflaskapp:1.0 .
+docker run -d --name myflaskapp -p 127.0.0.1:37199:5000 -v $(readlink -f external/config.yaml):/app/external/config.yaml:ro -v $(readlink -f ~/.ssh/id_rsa):/home/john/.ssh/id_rsa:ro myflaskapp:1.0
 ```
 
 ## How to test the service?

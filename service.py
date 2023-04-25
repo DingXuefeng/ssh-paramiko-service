@@ -29,12 +29,10 @@ app = Flask(__name__)
 def init_ssh_resources():
     print('collecting ssh resources')
     max_connections = int(config["max_connections"])
-    private_key = paramiko.RSAKey.from_private_key_file(config["server"]["pkey"])
 
     for _ in range(max_connections):
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(config["server"]["host"], username=config["server"]["user"], pkey=private_key)
         ssh_connections.put(ssh_client)
 
 def init_worker_resources():
@@ -62,6 +60,16 @@ def release_resources():
         ssh_client.close()
 
 def execute_ssh_task(ssh_client, command):
+    if not ssh_client.get_transport() or not ssh_client.get_transport().is_active():
+        print("Reconnecting to the SSH server...")
+        private_key = paramiko.RSAKey.from_private_key_file(config["server"]["pkey"])
+        ssh_client.connect(config["server"]["host"], username=config["server"]["user"], pkey=private_key)
+        transport = ssh_client.get_transport()
+        # Set the keep-alive interval to 60 seconds
+        transport.set_keepalive(60)
+        # Send a null packet every 30 seconds after the client has been idle for 60 seconds
+        transport.set_keepalive_interval(60)
+        transport.set_keepalive_count_max(1800)
     channel = ssh_client.get_transport().open_session()
     print('start!')
     channel.exec_command(command)
@@ -95,6 +103,9 @@ def ssh_worker():
 
 @app.route('/submit', methods=['POST'])
 def submit():
+    headers = request.headers
+    for name, value in headers.items():
+        print(f'{name}: {value}')
     data = request.get_json()
     command = data.get('command')
     if not command:
@@ -112,7 +123,7 @@ if __name__ == '__main__':
     init_worker_resources()
 
     try:
-        app.run()
+        app.run(host='0.0.0.0') # for WSL
     finally:
         print("shutting down")
         release_resources()
