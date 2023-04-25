@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import queue
 import threading
 import paramiko
@@ -6,7 +7,13 @@ from flask import Flask, jsonify, request
 import yaml
 import time
 
-with open("external/config.yaml", 'r') as config_file:
+# Get the directory containing service.py
+service_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to config.yaml
+config_path = os.path.join(service_dir, 'external', 'config.yaml')
+
+with open(config_path, 'r') as config_file:
     config = yaml.load(config_file, Loader=yaml.FullLoader)
 
 app = Flask(__name__)
@@ -71,6 +78,11 @@ for _ in range(num_workers):
 def submit():
     data = request.get_json()
     command = data.get('command')
+    if not command:
+        response = {
+            'error': 'Command key is missing or empty in the request payload'
+        }
+        return jsonify(response), 400
     response = {}
     task_queue.put((command, response))
     task_queue.join()
