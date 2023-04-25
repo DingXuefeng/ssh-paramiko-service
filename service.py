@@ -6,33 +6,60 @@ import paramiko
 from flask import Flask, jsonify, request
 import yaml
 import time
-
-# Get the directory containing service.py
+default_config = {
+    "max_connections": 1,
+    "num_workers": 1,
+}
 service_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Construct the path to config.yaml
 config_path = os.path.join(service_dir, 'external', 'config.yaml')
+if os.path.isfile(config_path):
+    print('file: ',config_path)
+    time.sleep(10)
+    with open(config_path, 'r') as config_file:
+        config = yaml.load(config_file, Loader=yaml.FullLoader)
+else:
+    config = default_config
 
-with open(config_path, 'r') as config_file:
-    config = yaml.load(config_file, Loader=yaml.FullLoader)
+ssh_connections = queue.Queue()
+task_queue = queue.Queue()
+workers = []
 
 app = Flask(__name__)
 
-# Set up the SSH connection pool
-max_connections = int(config["max_connections"])
-ssh_connections = queue.Queue(max_connections)
+def init_ssh_resources():
+    print('collecting ssh resources')
+    max_connections = int(config["max_connections"])
+    private_key = paramiko.RSAKey.from_private_key_file(config["server"]["pkey"])
 
-# Load your private key
-private_key = paramiko.RSAKey.from_private_key_file(config["server"]["pkey"])
+    for _ in range(max_connections):
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(config["server"]["host"], username=config["server"]["user"], pkey=private_key)
+        ssh_connections.put(ssh_client)
 
-for _ in range(max_connections):
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(config["server"]["host"], username=config["server"]["user"], pkey=private_key)
-    ssh_connections.put(ssh_client)
+def init_worker_resources():
+    print('starting worker threads')
+    num_workers = int(config["num_workers"])
 
-# Task queue
-task_queue = queue.Queue()
+    for _ in range(num_workers):
+        worker = threading.Thread(target=ssh_worker)
+        worker.start()
+        workers.append(worker)
+
+def release_resources():
+    print('releasing resource')
+
+    # Stop worker threads
+    num_workers = int(config["num_workers"])
+    for _ in range(num_workers):
+        task_queue.put(None)
+    for worker in workers:
+        worker.join()
+
+    # Close SSH connections
+    while not ssh_connections.empty():
+        ssh_client = ssh_connections.get()
+        ssh_client.close()
 
 def execute_ssh_task(ssh_client, command):
     channel = ssh_client.get_transport().open_session()
@@ -66,14 +93,6 @@ def ssh_worker():
             ssh_connections.put(ssh_client)
             task_queue.task_done()
 
-# Start worker threads
-num_workers = int(config["num_workers"])
-workers = []
-for _ in range(num_workers):
-    worker = threading.Thread(target=ssh_worker)
-    worker.start()
-    workers.append(worker)
-
 @app.route('/submit', methods=['POST'])
 def submit():
     data = request.get_json()
@@ -89,16 +108,11 @@ def submit():
     return jsonify(response)
 
 if __name__ == '__main__':
+    init_ssh_resources()
+    init_worker_resources()
+
     try:
         app.run()
     finally:
-        # Stop worker threads
-        for _ in range(num_workers):
-            task_queue.put(None)
-        for worker in workers:
-            worker.join()
-
-        # Close SSH connections
-        while not ssh_connections.empty():
-            ssh_client = ssh_connections.get()
-            ssh_client.close()
+        print("shutting down")
+        release_resources()

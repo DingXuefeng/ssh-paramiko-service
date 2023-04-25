@@ -5,12 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "gunicorn",
+            "name": "unittest",
             "type": "python",
             "request": "launch",
-            "module": "gunicorn",
-            "args": ["service:app", "-b", "0.0.0.0:5000","--workers=5","--timeout=60"],
-            "justMyCode": false
+            "module": "unittest",
+            "args": ["discover","test"],
+            "cwd":"${workspaceFolder}",
+            "justMyCode": true
         },
         {
             "name": "service.py",

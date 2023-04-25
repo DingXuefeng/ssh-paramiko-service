@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import unittest
+from unittest.mock import patch
 from flask_testing import TestCase
-from service import app, ssh_connections, task_queue, workers
+from service import app, init_worker_resources, release_resources
 
 class TestApp(TestCase):
     def create_app(self):
@@ -9,18 +10,20 @@ class TestApp(TestCase):
         return app
 
     @classmethod
-    def tearDownClass(cls):
-        # Stop worker threads
-        for _ in range(len(workers)):
-            task_queue.put(None)
-        for worker in workers:
-            worker.join()
-        # Close SSH connections
-        while not ssh_connections.empty():
-            ssh_client = ssh_connections.get()
-            ssh_client.close()
+    def setUpClass(cls):
+        init_worker_resources()
 
-    def test_submit(self):
+    @classmethod
+    def tearDownClass(cls):
+        release_resources()
+
+    @patch('service.ssh_connections.put')
+    @patch('service.ssh_connections.get')
+    @patch('service.execute_ssh_task')
+    def test_submit(self, mock_execute_ssh_task,mock_ssh_get,mock_ssh_put):
+        mock_execute_ssh_task.return_value = ("Hello, World!", "")
+        mock_ssh_get.return_value = None
+
         data = {"command": "echo 'Hello, World!'"}
         response = self.client.post('/submit', json=data)
         self.assertEqual(response.status_code, 200)
