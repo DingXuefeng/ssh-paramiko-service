@@ -1,4 +1,4 @@
-[![Python CI](https://github.com/DingXuefeng/ssh-paramiko-service/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/DingXuefeng/ssh-paramiko-service/actions/workflows/ci.yml)
+[![Github Python CI](https://github.com/DingXuefeng/ssh-paramiko-service/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/DingXuefeng/ssh-paramiko-service/actions/workflows/ci.yml)
 
 # ssh-paramiko-service
 A docker service used to send command to a server through ssh. Use ssh pool to avoid too many ssh connections. #ssh #service
