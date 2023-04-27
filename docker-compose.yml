@@ -7,4 +7,9 @@ services:
       - ${SSH_KEY}:${SSH_KEY_IN_CONTAINER}:ro
     build: .
     ports:
-      - "127.0.0.1:37199:5000"
+      - "127.0.0.1:5000:5000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 5

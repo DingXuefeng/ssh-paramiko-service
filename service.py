@@ -126,6 +126,10 @@ def submit():
     task_queue.join()
     return jsonify(response)
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "OK"}), 200
+
 if __name__ == '__main__':
     init_ssh_resources()
     init_worker_resources()

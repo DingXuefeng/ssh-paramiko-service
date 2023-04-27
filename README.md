@@ -18,7 +18,7 @@ docker compose up
 ```
 - that's it! now test it:
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"command": "pwd"}' http://localhost:13715/submit
+curl -X POST -H "Content-Type: application/json" -d '{"command": "pwd"}' http://localhost:5000/submit
 ```
 
 ## How to install
@@ -64,7 +64,7 @@ python service.py
 ### docker way
 ```bash
 docker build -t myflaskapp:1.0 .
-docker run -d --name myflaskapp -p 127.0.0.1:37199:5000 -v $(readlink -f external/config.yaml):/app/external/config.yaml:ro -v $(readlink -f ~/.ssh/id_rsa):/home/john/.ssh/id_rsa:ro myflaskapp:1.0
+docker run -d --name myflaskapp -p 127.0.0.1:5000:5000 -v $(readlink -f external/config.yaml):/app/external/config.yaml:ro -v $(readlink -f ~/.ssh/id_rsa):/home/john/.ssh/id_rsa:ro myflaskapp:1.0
 ```
 
 ## How to test the service?

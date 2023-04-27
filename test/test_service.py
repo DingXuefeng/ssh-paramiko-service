@@ -20,7 +20,7 @@ class TestApp(TestCase):
     @patch('service.ssh_connections.put')
     @patch('service.ssh_connections.get')
     @patch('service.execute_ssh_task')
-    def test_submit(self, mock_execute_ssh_task,mock_ssh_get,mock_ssh_put):
+    def test_submit(self, mock_execute_ssh_task,mock_ssh_get,_):
         mock_execute_ssh_task.return_value = ("Hello, World!", "")
         mock_ssh_get.return_value = None
 
