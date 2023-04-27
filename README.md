@@ -8,14 +8,13 @@ A docker service used to send command to a server through ssh. Use ssh pool to a
 - simple service. if TCP connection is dropped not nicely, the worker maybe drained and you need to restart the service.
 
 ## Quick start
-- install docker first, and write a config file `external/config.yaml` (see **How to install**)
+- install docker first, and write a config file `ssh-paramiko-service/external/config.yaml` (see **How to install**)
 - then run it with docker
 ```bash
 # on windows WSL2, or Linux, or mac
 git clone https://github.com/DingXuefeng/ssh-paramiko-service.git
 cd ssh-paramiko-service
-docker build -t myflaskapp:1.0 .
-docker run -d --name myflaskapp -p 127.0.0.1:13715:5000 -v $(readlink -f external/config.yaml):/app/external/config.yaml:ro -v $(readlink -f ~/.ssh/id_rsa):/home/john/.ssh/id_rsa:ro myflaskapp:1.0
+docker compose up
 ```
 - that's it! now test it:
 ```bash
@@ -36,7 +35,8 @@ pip install -r requirements.txt
 ## How to configure
 - create a file `ssh-paramiko-service/external/config.yaml`. The name of the file is hard coded, see [`service.py`](service.py)
 
-- Put in the file your server name etc. example file:
+- Put in the file your server name, user name for login to ssh etc.
+- example file:
 ```yaml
 num_workers: 5
 max_connections: 1
@@ -45,6 +45,16 @@ server:
   user: john
   pkey: /home/john/.ssh/id_rsa
 ```
+- here `/home/john/.ssh/id_rsa` should be the location of your ssh key.
+
+- create a file `ssh-paramiko-service/.env`. The name of the file is special and `docker compose` will only read from this file.
+- Put in the file a few things:
+```bash
+CONFIGFILE=./external/config.yaml
+SSH_KEY=/home/john/.ssh/id_rsa
+SSH_KEY_IN_CONTAINER=/home/john/.ssh/id_rsa
+```
+- here `/home/john/.ssh/id_rsa` should be the location of your ssh key.
 
 ## How to launch the service?
 ### native way

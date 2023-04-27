@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  paramiko:
+    container_name: paramiko
+    volumes:
+      - ${CONFIGFILE}:/app/external/config.yaml:ro
+      - ${SSH_KEY}:${SSH_KEY_IN_CONTAINER}:ro
+    build: .
+    ports:
+      - "127.0.0.1:37199:5000"

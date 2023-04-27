@@ -62,14 +62,22 @@ def release_resources():
 def execute_ssh_task(ssh_client, command):
     if not ssh_client.get_transport() or not ssh_client.get_transport().is_active():
         print("Reconnecting to the SSH server...")
+        if "ProxyCommand" in config["server"]:
+            proxy_jump_command=config["server"]["ProxyCommand"].format(HOST=config["server"]["host"], PORT=22)
+            proxy = paramiko.ProxyCommand(proxy_jump_command)
+        else:
+            proxy = None
         private_key = paramiko.RSAKey.from_private_key_file(config["server"]["pkey"])
-        ssh_client.connect(config["server"]["host"], username=config["server"]["user"], pkey=private_key)
-        transport = ssh_client.get_transport()
+        try:
+            ssh_client.connect(config["server"]["host"], username=config["server"]["user"], pkey=private_key, sock=proxy)
+        except paramiko.AuthenticationException:
+            print ("Authentication Failed")
+        except paramiko.SSHException:
+            print ("Connection Failed")
         # Set the keep-alive interval to 60 seconds
+        transport = ssh_client.get_transport()
         transport.set_keepalive(60)
-        # Send a null packet every 30 seconds after the client has been idle for 60 seconds
-        transport.set_keepalive_interval(60)
-        transport.set_keepalive_count_max(1800)
+
     channel = ssh_client.get_transport().open_session()
     print('start!')
     channel.exec_command(command)
