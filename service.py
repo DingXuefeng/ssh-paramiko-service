@@ -67,13 +67,20 @@ def execute_ssh_task(ssh_client, command):
             proxy = paramiko.ProxyCommand(proxy_jump_command)
         else:
             proxy = None
-        private_key = paramiko.RSAKey.from_private_key_file(config["server"]["pkey"])
+
         try:
+            pkey_password = config["server"]["pkey_password"] if "pkey_password" in config["server"] else None
+            private_key = paramiko.RSAKey.from_private_key_file(config["server"]["pkey"],password=pkey_password)
             ssh_client.connect(config["server"]["host"], username=config["server"]["user"], pkey=private_key, sock=proxy)
+        except paramiko.ssh_exception.PasswordRequiredException:
+            print ("Private key is encrypted, but no password was provided")
+            return "","Private key is encrypted, but no password was provided"
         except paramiko.AuthenticationException:
             print ("Authentication Failed")
+            return "","Authentication Failed"
         except paramiko.SSHException:
             print ("Connection Failed")
+            return "", "Connection Failed"
         # Set the keep-alive interval to 60 seconds
         transport = ssh_client.get_transport()
         transport.set_keepalive(60)

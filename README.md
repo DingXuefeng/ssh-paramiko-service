@@ -8,7 +8,8 @@ A docker service used to send command to a server through ssh. Use ssh pool to a
 - simple service. if TCP connection is dropped not nicely, the worker maybe drained and you need to restart the service.
 
 ## Quick start
-- install docker first, and write a config file `ssh-paramiko-service/external/config.yaml` (see **How to install**)
+- install docker first
+- write a config file `ssh-paramiko-service/external/config.yaml` (see **How to configure**)
 - then run it with docker
 ```bash
 # on windows WSL2, or Linux, or mac
@@ -44,6 +45,10 @@ server:
   host: linux.server.com
   user: john
   pkey: /home/john/.ssh/id_rsa
+  # if your private key is password protected, uncomment this line:
+  # pkey_password: "my@key+p@ssw0rd"
+  # if you need to jump over some bastion node, uncomment this line:
+  # ProxyCommand: "ssh john@bastion nc {HOST} {PORT}"
 ```
 - here `/home/john/.ssh/id_rsa` should be the location of your ssh key.
 
@@ -54,7 +59,7 @@ CONFIGFILE=./external/config.yaml
 SSH_KEY=/home/john/.ssh/id_rsa
 SSH_KEY_IN_CONTAINER=/home/john/.ssh/id_rsa
 ```
-- here `/home/john/.ssh/id_rsa` should be the location of your ssh key.
+- You'd better set `pkey`, `SSH_KEY`, `SSH_KEY_IN_CONTAINER` all the same.
 
 ## How to launch the service?
 ### native way
